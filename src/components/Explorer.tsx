@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router";
 import type { Endpoint, PolicyRun, RunStatus, Sla, Update } from "../data/snapshot";
 import { byRisk, endpoints, runs, thirdPartyApps, updates } from "../data/snapshot";
 import { AssetsTable, RunsTable, SoftwareTable, VulnsTable } from "./Tables";
@@ -59,8 +60,14 @@ function FilterChips<T>({ filters, all, value, onChange }: { filters: Filter<T>[
   );
 }
 
+const TAB_KEYS: TabKey[] = ["vulns", "software", "assets", "policies"];
+
 export function Explorer() {
-  const [tab, setTab] = useState<TabKey>("vulns");
+  // The active tab lives in the URL (?tab=assets) so "Back" from an asset page lands on the same tab.
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get("tab") as TabKey | null;
+  const tab: TabKey = tabParam && TAB_KEYS.includes(tabParam) ? tabParam : "vulns";
+  const setTab = (k: TabKey) => setParams(k === "vulns" ? {} : { tab: k }, { replace: true });
   const [query, setQuery] = useState("");
   const [severity, setSeverity] = useState("risk");
   const [sla, setSla] = useState<"all" | Sla>("all");

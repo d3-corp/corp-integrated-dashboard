@@ -1,5 +1,6 @@
+import { Link } from "react-router";
 import type { Endpoint, PolicyRun, Update } from "../data/snapshot";
-import { cveUrl, severityLabel } from "../data/snapshot";
+import { assetPath, cveUrl, severityLabel } from "../data/snapshot";
 import { GridHead, GridRow, GridTable, Pill, RUN_BAR, RUN_TONE, SEVERITY_TONE, SLA_TEXT, Track } from "./ui";
 
 const ASSET_COLS = "1.6fr 1.3fr 1.2fr 0.8fr 1.1fr 1.2fr 1.6fr 0.6fr 1fr 0.7fr";
@@ -9,8 +10,8 @@ export function AssetsTable({ rows }: { rows: Endpoint[] }) {
     <GridTable minWidth={1180}>
       <GridHead cols={ASSET_COLS} headers={["Hostname", "User", "OS", "Status", "IP address", "Last seen", "CPU", "RAM", "Group", "Reboot"]} />
       {rows.map((a) => (
-        <GridRow key={a.name} cols={ASSET_COLS}>
-          <span className="c-strong c-code c-break">{a.name}</span>
+        <GridRow key={a.name} cols={ASSET_COLS} className="grid-row--link">
+          <Link to={assetPath(a.name)} className="row-link c-strong c-code c-break">{a.name}</Link>
           <span className="c-2">{a.user}</span>
           <span className="c-2">{a.os}</span>
           <span className={`status ${a.online ? "fg-text" : "fg-muted"}`}>

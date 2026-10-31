@@ -73,9 +73,9 @@ export function GridHead({ cols, headers, withTop }: { cols: string; headers: st
   );
 }
 
-export function GridRow({ cols, children }: { cols: string; children: ReactNode }) {
+export function GridRow({ cols, className = "", children }: { cols: string; className?: string; children: ReactNode }) {
   return (
-    <div className="grid-row" style={{ gridTemplateColumns: cols }}>
+    <div className={`grid-row ${className}`} style={{ gridTemplateColumns: cols }}>
       {children}
     </div>
   );

@@ -110,3 +110,27 @@ export const SLA_ORDER: Sla[] = ["Overdue", "Due soon", "Due later"];
 export const severityLabel = (s: Severity) => (s === "None" ? "Unrated" : s);
 
 export const cveUrl = (id: string) => `https://www.cve.org/CVERecord?id=${id}`;
+
+export const assetPath = (hostname: string) => `/assets/${encodeURIComponent(hostname)}`;
+
+export const findEndpoint = (hostname: string) => endpoints.find((e) => e.name === hostname);
+
+export interface EndpointRun {
+  run: PolicyRun;
+  /** "direct" when the endpoint is named in the run's target, "group" when it ran via the endpoint's group. */
+  via: "direct" | "group";
+}
+
+/** Policy runs that targeted this endpoint by name (full or short hostname) or through its group. */
+export function runsForEndpoint(e: Endpoint): EndpointRun[] {
+  const short = e.name.split(".")[0].toLowerCase();
+  const names = new Set([e.name.toLowerCase(), short]);
+  const groupTarget = `${e.group} (group)`.toLowerCase();
+
+  return runs.flatMap((run): EndpointRun[] => {
+    const target = run.target.toLowerCase();
+    if (target.split(",").some((t) => names.has(t.trim()))) return [{ run, via: "direct" }];
+    if (target === groupTarget) return [{ run, via: "group" }];
+    return [];
+  });
+}
