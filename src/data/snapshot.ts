@@ -64,7 +64,12 @@ export interface DataSet {
   thirdPartyApps: Update[];
 }
 
-export function buildData(raw: RawData): DataSet {
+export interface BuildOptions {
+  /** Label for an empty update version. Live data leaves it unknown ("—"); the bundled sample means "Latest". */
+  emptyVersion?: string;
+}
+
+export function buildData(raw: RawData, { emptyVersion = "—" }: BuildOptions = {}): DataSet {
   const endpoints: Endpoint[] = raw.endpoints.map((a) => ({
     name: a[0],
     user: a[1],
@@ -89,8 +94,8 @@ export function buildData(raw: RawData): DataSet {
     vendor: p[1],
     type: p[2] === "App" ? "App" : p[2] === "Windows" ? "Windows" : null,
     kb: p[3] || "—",
-    // The bundled sample uses "" for the latest available version; any other value (including "—") is kept as given.
-    version: p[4] === "" ? "Latest" : p[4],
+    // An empty version is unknown in live data; only the bundled sample uses "" to mean the latest version.
+    version: p[4] === "" ? emptyVersion : p[4],
     severity: p[5] as Severity,
     sla: p[6] as Sla,
     deadline: p[7],
@@ -112,11 +117,14 @@ export function buildData(raw: RawData): DataSet {
   return { endpoints, updates, runs, thirdPartyApps };
 }
 
-export const sampleData = buildData({
-  endpoints: RAW_ENDPOINTS,
-  updates: RAW_UPDATES,
-  runs: RAW_RUNS,
-});
+export const sampleData = buildData(
+  {
+    endpoints: RAW_ENDPOINTS,
+    updates: RAW_UPDATES,
+    runs: RAW_RUNS,
+  },
+  { emptyVersion: "Latest" },
+);
 
 export const endpoints: Endpoint[] = sampleData.endpoints;
 export const updates: Update[] = sampleData.updates;
