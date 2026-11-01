@@ -14,16 +14,22 @@ export function AssetsTable({ rows }: { rows: Endpoint[] }) {
           <Link to={assetPath(a.name)} className="row-link c-strong c-code c-break">{a.name}</Link>
           <span className="c-2">{a.user}</span>
           <span className="c-2">{a.os}</span>
-          <span className={`status ${a.online ? "fg-text" : "fg-muted"}`}>
-            <span className={`status__dot ${a.online ? "bg-text" : "bg-dim"}`} aria-hidden="true" />
-            {a.online ? "Online" : "Offline"}
-          </span>
+          {a.online === null ? (
+            <span className="status fg-muted">—</span>
+          ) : (
+            <span className={`status ${a.online ? "fg-text" : "fg-muted"}`}>
+              <span className={`status__dot ${a.online ? "bg-text" : "bg-dim"}`} aria-hidden="true" />
+              {a.online ? "Online" : "Offline"}
+            </span>
+          )}
           <span className="c-code c-2">{a.ip}</span>
           <span className="c-code c-2">{a.lastSeen}</span>
           <span className="c-2">{a.cpu}</span>
           <span className="c-2">{a.ram}</span>
           <span className="c-2">{a.group}</span>
-          <span className={`c-strong ${a.rebootPending ? "fg-warn" : "fg-muted"}`}>{a.rebootPending ? "Pending" : "No"}</span>
+          <span className={`c-strong ${a.rebootPending === null ? "fg-muted" : a.rebootPending ? "fg-warn" : "fg-muted"}`}>
+            {a.rebootPending === null ? "—" : a.rebootPending ? "Pending" : "No"}
+          </span>
         </GridRow>
       ))}
     </GridTable>
@@ -76,7 +82,7 @@ export function VulnsTable({ rows, openId, onToggle }: { rows: Update[]; openId:
               <span className="fg-muted" aria-hidden="true">{isOpen ? "−" : "+"}</span>
               <span className="c-strong">{v.name}</span>
               <span className="c-2">{v.vendor}</span>
-              <span className="c-2">{v.type}</span>
+              <span className="c-2">{v.type ?? "—"}</span>
               <span><Pill tone={SEVERITY_TONE[v.severity]}>{severityLabel(v.severity)}</Pill></span>
               <span className="c-code c-strong">{v.cves.length}</span>
               <span className={`c-strong ${SLA_TEXT[v.sla]}`}>{v.sla}</span>

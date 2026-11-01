@@ -17,10 +17,10 @@ const SEVERITY_FILTERS: Filter<Update>[] = [
 
 const ASSET_FILTERS: Filter<Endpoint>[] = [
   { key: "all", label: "All", test: () => true },
-  { key: "online", label: "Online", test: (a) => a.online },
-  { key: "offline", label: "Offline", test: (a) => !a.online },
+  { key: "online", label: "Online", test: (a) => a.online === true },
+  { key: "offline", label: "Offline", test: (a) => a.online === false },
   { key: "servers", label: "Servers", test: (a) => a.isServer },
-  { key: "reboot", label: "Reboot pending", test: (a) => a.rebootPending },
+  { key: "reboot", label: "Reboot pending", test: (a) => a.rebootPending === true },
 ];
 
 const RUN_FILTERS: Filter<PolicyRun>[] = [

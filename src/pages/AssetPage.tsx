@@ -57,8 +57,23 @@ export function AssetPage() {
   const since = isTest ? " since 13 Oct" : "";
 
   const kpis = [
-    { label: "Agent status", value: e.online ? "Online" : "Offline", tone: e.online ? "fg-text" : "fg-muted", sub: `Last seen ${e.lastSeen}` },
-    { label: "Reboot", value: e.rebootPending ? "Pending" : "Not needed", tone: e.rebootPending ? "fg-warn" : "fg-muted", sub: e.rebootPending ? "Restart to finish installing updates" : "No restart waiting" },
+    {
+      label: "Agent status",
+      value: e.online === null ? "—" : e.online ? "Online" : "Offline",
+      tone: e.online === null ? "fg-muted" : e.online ? "fg-text" : "fg-muted",
+      sub: e.online === null ? "Connectivity not reported" : `Last seen ${e.lastSeen}`,
+    },
+    {
+      label: "Reboot",
+      value: e.rebootPending === null ? "—" : e.rebootPending ? "Pending" : "Not needed",
+      tone: e.rebootPending === true ? "fg-warn" : "fg-muted",
+      sub:
+        e.rebootPending === null
+          ? "Reboot state not reported"
+          : e.rebootPending
+            ? "Restart to finish installing updates"
+            : "No restart waiting",
+    },
     { label: "Policy runs", value: String(endpointRuns.length), tone: "fg-text", sub: `${endpointRuns.filter((r) => r.via === "direct").length} direct · ${endpointRuns.filter((r) => r.via === "group").length} via group` },
     { label: "Failed runs", value: String(failed), tone: failed ? "fg-danger" : "fg-muted", sub: isTest ? "since 13 Oct" : "in the current data" },
   ];
@@ -76,7 +91,11 @@ export function AssetPage() {
               <span className="cursor" aria-hidden="true" />
             </h1>
             <div className="header__tags">
-              <Pill tone={e.online ? "ok" : "neutral"}>{e.online ? "Online" : "Offline"}</Pill>
+              {e.online === null ? (
+                <Pill tone="neutral">Status unknown</Pill>
+              ) : (
+                <Pill tone={e.online ? "ok" : "neutral"}>{e.online ? "Online" : "Offline"}</Pill>
+              )}
               {e.isServer && <Pill tone="run">Server</Pill>}
               {e.rebootPending && <Pill tone="warn">Reboot pending</Pill>}
             </div>
@@ -106,7 +125,7 @@ export function AssetPage() {
             <Facts rows={[["Manufacturer", e.manufacturer], ["CPU", e.cpu], ["Memory", e.ram], ["Disks", e.disk], ["Serial", e.serial]]} />
           </Panel>
           <Panel title="Network">
-            <Facts rows={[["IP address", e.ip], ["Last seen", e.lastSeen], ["Connectivity", e.online ? "Agent connected" : "Agent disconnected"]]} />
+            <Facts rows={[["IP address", e.ip], ["Last seen", e.lastSeen], ["Connectivity", e.online === null ? "Unknown" : e.online ? "Agent connected" : "Agent disconnected"]]} />
           </Panel>
         </section>
 

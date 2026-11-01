@@ -12,7 +12,8 @@ export interface Endpoint {
   name: string;
   user: string;
   os: string;
-  online: boolean;
+  /** true = connected, false = disconnected, null = unknown (live data omitted or marked "—"/other). */
+  online: boolean | null;
   ip: string;
   lastSeen: string;
   manufacturer: string;
@@ -22,7 +23,8 @@ export interface Endpoint {
   serial: string;
   group: string;
   isServer: boolean;
-  rebootPending: boolean;
+  /** true = pending, false = not pending, null = unknown (live data omitted or marked "—"/other). */
+  rebootPending: boolean | null;
   agentVersion: string;
 }
 
@@ -30,7 +32,7 @@ export interface Update {
   id: string;
   name: string;
   vendor: string;
-  type: "App" | "Windows";
+  type: "App" | "Windows" | null;
   kb: string;
   version: string;
   severity: Severity;
@@ -67,7 +69,7 @@ export function buildData(raw: RawData): DataSet {
     name: a[0],
     user: a[1],
     os: a[2],
-    online: a[3] === "C",
+    online: a[3] === "C" ? true : a[3] === "D" ? false : null,
     ip: a[4],
     lastSeen: a[5],
     manufacturer: a[6],
@@ -77,7 +79,7 @@ export function buildData(raw: RawData): DataSet {
     serial: a[10],
     group: a[11],
     isServer: a[11] === "Servers",
-    rebootPending: a[12] === "Y",
+    rebootPending: a[12] === "Y" ? true : a[12] === "N" ? false : null,
     agentVersion: a[13],
   }));
 
@@ -85,9 +87,10 @@ export function buildData(raw: RawData): DataSet {
     id: `p${i}`,
     name: p[0],
     vendor: p[1],
-    type: p[2] === "App" ? "App" : "Windows",
+    type: p[2] === "App" ? "App" : p[2] === "Windows" ? "Windows" : null,
     kb: p[3] || "—",
-    version: p[4] || "Latest",
+    // The bundled sample uses "" for the latest available version; any other value (including "—") is kept as given.
+    version: p[4] === "" ? "Latest" : p[4],
     severity: p[5] as Severity,
     sla: p[6] as Sla,
     deadline: p[7],
