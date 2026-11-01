@@ -1,8 +1,13 @@
 import { useMemo } from "react";
-import { byRisk, endpoints, runs, SLA_ORDER, updates } from "../data/snapshot";
+import { byRisk, SLA_ORDER } from "../data/snapshot";
+import { useData } from "../data/source";
 import { Panel, Pill, SLA_BAR, SLA_TONE, Track } from "./ui";
 
 export function KpiGrid() {
+  const { data, source } = useData();
+  const { endpoints, updates, runs } = data;
+  const since = source.kind === "test" ? " since 13 Oct" : "";
+
   const kpis = useMemo(() => {
     const online = endpoints.filter((e) => e.online).length;
     const servers = endpoints.filter((e) => e.isServer).length;
@@ -20,9 +25,9 @@ export function KpiGrid() {
       { label: "Unique CVEs open", value: uniqueCves, sub: `across ${withCve} missing updates`, tone: "fg-danger" },
       { label: "Missing updates", value: updates.length, sub: `${overdue} past SLA deadline`, tone: "fg-text" },
       { label: "Reboot pending", value: reboots, sub: "endpoints awaiting restart", tone: "fg-warn" },
-      { label: "Failed automations", value: runErrors, sub: `of ${runs.length} policy runs since 13 Oct`, tone: "fg-danger" },
+      { label: "Failed automations", value: runErrors, sub: `of ${runs.length} policy runs${since}`, tone: "fg-danger" },
     ];
-  }, []);
+  }, [endpoints, updates, runs, since]);
 
   return (
     <section aria-label="Key figures" className="kpis">
@@ -48,6 +53,8 @@ function BarRow({ label, n, pct, fillClass }: { label: string; n: number; pct: n
 }
 
 export function Insights() {
+  const { data } = useData();
+  const { endpoints, updates } = data;
   const { osMix, slaMix, slaFoot, topRisk } = useMemo(() => {
     const osCount = new Map<string, number>();
     endpoints.forEach((e) => osCount.set(e.os, (osCount.get(e.os) ?? 0) + 1));
@@ -57,7 +64,7 @@ export function Insights() {
       .map(([label, n]) => ({ label, n, pct: Math.round((n / osMax) * 100) }));
 
     const slaCount = SLA_ORDER.map((sla) => updates.filter((u) => u.sla === sla).length);
-    const slaMax = Math.max(...slaCount);
+    const slaMax = Math.max(...slaCount) || 1;
     const slaMix = SLA_ORDER.map((sla, i) => ({ sla, n: slaCount[i], pct: Math.round((slaCount[i] / slaMax) * 100) }));
 
     const win = updates.filter((u) => u.type === "Windows").length;
@@ -65,7 +72,7 @@ export function Insights() {
 
     const topRisk = updates.filter((u) => u.severity !== "None").sort(byRisk).slice(0, 6);
     return { osMix, slaMix, slaFoot, topRisk };
-  }, []);
+  }, [endpoints, updates]);
 
   return (
     <section className="insights">

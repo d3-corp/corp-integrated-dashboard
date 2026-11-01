@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router";
 import { findEndpoint, ORG, runsForEndpoint, SNAPSHOT_DATE } from "../data/snapshot";
+import { useData } from "../data/source";
 import { GridHead, GridRow, GridTable, Panel, Pill, RUN_BAR, RUN_TONE, Track } from "../components/ui";
 
 const BACK_TO_ASSETS = "/?tab=assets";
@@ -29,32 +30,37 @@ function BackLink() {
 
 export function AssetPage() {
   const { hostname = "" } = useParams();
-  const e = findEndpoint(hostname);
+  const { data, source } = useData();
+  const e = findEndpoint(data, hostname);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [hostname]);
 
   if (!e) {
+    const scope = source.kind === "live" ? "in the current data" : `in the ${SNAPSHOT_DATE} snapshot`;
     return (
       <div className="page">
         <div className="page__inner">
           <BackLink />
           <h1 className="header__title">&gt; Endpoint not found</h1>
-          <p className="fg-muted">No endpoint named “{hostname}” in the {SNAPSHOT_DATE} snapshot.</p>
+          <p className="fg-muted">No endpoint named “{hostname}” {scope}.</p>
         </div>
       </div>
     );
   }
 
-  const endpointRuns = runsForEndpoint(e);
+  const endpointRuns = runsForEndpoint(e, data.runs);
   const failed = endpointRuns.filter((r) => r.run.status === "Error").length;
+  const org = source.kind === "live" ? source.organization : ORG;
+  const isTest = source.kind === "test";
+  const since = isTest ? " since 13 Oct" : "";
 
   const kpis = [
     { label: "Agent status", value: e.online ? "Online" : "Offline", tone: e.online ? "fg-text" : "fg-muted", sub: `Last seen ${e.lastSeen}` },
     { label: "Reboot", value: e.rebootPending ? "Pending" : "Not needed", tone: e.rebootPending ? "fg-warn" : "fg-muted", sub: e.rebootPending ? "Restart to finish installing updates" : "No restart waiting" },
     { label: "Policy runs", value: String(endpointRuns.length), tone: "fg-text", sub: `${endpointRuns.filter((r) => r.via === "direct").length} direct · ${endpointRuns.filter((r) => r.via === "group").length} via group` },
-    { label: "Failed runs", value: String(failed), tone: failed ? "fg-danger" : "fg-muted", sub: "since 13 Oct" },
+    { label: "Failed runs", value: String(failed), tone: failed ? "fg-danger" : "fg-muted", sub: isTest ? "since 13 Oct" : "in the current data" },
   ];
 
   return (
@@ -64,7 +70,7 @@ export function AssetPage() {
 
         <header className="header">
           <div className="header__titles">
-            <div className="header__prompt">root@{ORG.toLowerCase()}:~$ action1 endpoint show "{e.name}"</div>
+            <div className="header__prompt">root@{org.toLowerCase()}:~$ action1 endpoint show "{e.name}"</div>
             <h1 className="header__title c-break">
               &gt; {e.name}
               <span className="cursor" aria-hidden="true" />
@@ -75,7 +81,11 @@ export function AssetPage() {
               {e.rebootPending && <Pill tone="warn">Reboot pending</Pill>}
             </div>
           </div>
-          <div className="header__meta">Snapshot {SNAPSHOT_DATE}</div>
+          <div className="header__meta">
+            {source.kind === "live"
+              ? `Live data · ${source.organization} · fetched ${new Date(source.fetchedAt).toLocaleString()}`
+              : `Snapshot ${SNAPSHOT_DATE}`}
+          </div>
         </header>
 
         <section aria-label="Endpoint status" className="kpis">
@@ -106,7 +116,7 @@ export function AssetPage() {
             <span className="toolbar__count">{endpointRuns.length} runs</span>
           </div>
           {endpointRuns.length === 0 ? (
-            <div className="empty">No policy runs targeted this endpoint since 13 Oct.</div>
+            <div className="empty">No policy runs targeted this endpoint{since}.</div>
           ) : (
             <GridTable minWidth={1040}>
               <GridHead cols={RUN_COLS} headers={["Policy run", "Target", "Via", "Started", "Finished", "Status", "Progress"]} />
