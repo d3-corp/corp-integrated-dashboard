@@ -86,6 +86,38 @@ a:focus-visible {
 .header__prompt,
 .header__meta { font-size: 13px; color: var(--text-muted); }
 .header__prompt { font-weight: 500; }
+.header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.data-indicator {
+  padding: 3px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--surface-head);
+}
+.data-indicator--test { border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+.data-indicator--live { border-color: var(--accent); color: var(--accent-hi); background: var(--ok-bg); }
+.fetch-live {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-head);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fetch-live:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-hi); }
+.fetch-live:disabled { opacity: 0.6; cursor: progress; }
+.fetch-live__error { flex-basis: 100%; font-size: 13px; color: var(--danger); }
 .header__title {
   margin: 0;
   font-size: 28px;

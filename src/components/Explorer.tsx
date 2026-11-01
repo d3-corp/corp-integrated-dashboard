@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import type { Endpoint, PolicyRun, RunStatus, Sla, Update } from "../data/snapshot";
-import { byRisk, endpoints, runs, thirdPartyApps, updates } from "../data/snapshot";
+import { byRisk } from "../data/snapshot";
+import { useData } from "../data/source";
 import { AssetsTable, RunsTable, SoftwareTable, VulnsTable } from "./Tables";
 
 type TabKey = "vulns" | "software" | "assets" | "policies";
@@ -16,10 +17,10 @@ const SEVERITY_FILTERS: Filter<Update>[] = [
 
 const ASSET_FILTERS: Filter<Endpoint>[] = [
   { key: "all", label: "All", test: () => true },
-  { key: "online", label: "Online", test: (a) => a.online },
-  { key: "offline", label: "Offline", test: (a) => !a.online },
+  { key: "online", label: "Online", test: (a) => a.online === true },
+  { key: "offline", label: "Offline", test: (a) => a.online === false },
   { key: "servers", label: "Servers", test: (a) => a.isServer },
-  { key: "reboot", label: "Reboot pending", test: (a) => a.rebootPending },
+  { key: "reboot", label: "Reboot pending", test: (a) => a.rebootPending === true },
 ];
 
 const RUN_FILTERS: Filter<PolicyRun>[] = [
@@ -74,6 +75,9 @@ export function Explorer() {
   const [assetFilter, setAssetFilter] = useState("all");
   const [runFilter, setRunFilter] = useState("all");
   const [openId, setOpenId] = useState("");
+
+  const { data } = useData();
+  const { endpoints, updates, runs, thirdPartyApps } = data;
 
   const q = query.toLowerCase().trim();
   const pick = <T,>(filters: Filter<T>[], key: string) => filters.find((f) => f.key === key)!.test;

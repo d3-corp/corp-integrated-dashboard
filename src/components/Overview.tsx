@@ -1,12 +1,19 @@
 import { useMemo } from "react";
-import { byRisk, endpoints, runs, SLA_ORDER, updates } from "../data/snapshot";
+import { byRisk, SLA_ORDER } from "../data/snapshot";
+import { useData } from "../data/source";
 import { Panel, Pill, SLA_BAR, SLA_TONE, Track } from "./ui";
 
 export function KpiGrid() {
+  const { data, source } = useData();
+  const { endpoints, updates, runs } = data;
+  const since = source.kind === "test" ? " since 13 Oct" : "";
+
   const kpis = useMemo(() => {
-    const online = endpoints.filter((e) => e.online).length;
+    const online = endpoints.filter((e) => e.online === true).length;
+    const offline = endpoints.filter((e) => e.online === false).length;
+    const unknownOnline = endpoints.filter((e) => e.online === null).length;
     const servers = endpoints.filter((e) => e.isServer).length;
-    const reboots = endpoints.filter((e) => e.rebootPending).length;
+    const reboots = endpoints.filter((e) => e.rebootPending === true).length;
     const crit = updates.filter((u) => u.severity === "Critical").length;
     const imp = updates.filter((u) => u.severity === "Important").length;
     const withCve = updates.filter((u) => u.cves.length > 0).length;
@@ -15,14 +22,14 @@ export function KpiGrid() {
     const runErrors = runs.filter((r) => r.status === "Error").length;
 
     return [
-      { label: "Managed endpoints", value: endpoints.length, sub: `${online} online · ${endpoints.length - online} offline · ${servers} servers`, tone: "fg-text" },
+      { label: "Managed endpoints", value: endpoints.length, sub: `${online} online · ${offline} offline${unknownOnline > 0 ? ` · ${unknownOnline} unknown` : ""} · ${servers} servers`, tone: "fg-text" },
       { label: "Critical updates", value: crit, sub: `${imp} more rated Important`, tone: "fg-danger" },
       { label: "Unique CVEs open", value: uniqueCves, sub: `across ${withCve} missing updates`, tone: "fg-danger" },
       { label: "Missing updates", value: updates.length, sub: `${overdue} past SLA deadline`, tone: "fg-text" },
       { label: "Reboot pending", value: reboots, sub: "endpoints awaiting restart", tone: "fg-warn" },
-      { label: "Failed automations", value: runErrors, sub: `of ${runs.length} policy runs since 13 Oct`, tone: "fg-danger" },
+      { label: "Failed automations", value: runErrors, sub: `of ${runs.length} policy runs${since}`, tone: "fg-danger" },
     ];
-  }, []);
+  }, [endpoints, updates, runs, since]);
 
   return (
     <section aria-label="Key figures" className="kpis">
@@ -48,6 +55,8 @@ function BarRow({ label, n, pct, fillClass }: { label: string; n: number; pct: n
 }
 
 export function Insights() {
+  const { data } = useData();
+  const { endpoints, updates } = data;
   const { osMix, slaMix, slaFoot, topRisk } = useMemo(() => {
     const osCount = new Map<string, number>();
     endpoints.forEach((e) => osCount.set(e.os, (osCount.get(e.os) ?? 0) + 1));
@@ -57,15 +66,16 @@ export function Insights() {
       .map(([label, n]) => ({ label, n, pct: Math.round((n / osMax) * 100) }));
 
     const slaCount = SLA_ORDER.map((sla) => updates.filter((u) => u.sla === sla).length);
-    const slaMax = Math.max(...slaCount);
+    const slaMax = Math.max(...slaCount) || 1;
     const slaMix = SLA_ORDER.map((sla, i) => ({ sla, n: slaCount[i], pct: Math.round((slaCount[i] / slaMax) * 100) }));
 
     const win = updates.filter((u) => u.type === "Windows").length;
-    const slaFoot = `${win} Windows/driver updates · ${updates.length - win} third-party app updates`;
+    const apps = updates.filter((u) => u.type === "App").length;
+    const slaFoot = `${win} Windows/driver updates · ${apps} third-party app updates`;
 
     const topRisk = updates.filter((u) => u.severity !== "None").sort(byRisk).slice(0, 6);
     return { osMix, slaMix, slaFoot, topRisk };
-  }, []);
+  }, [endpoints, updates]);
 
   return (
     <section className="insights">
