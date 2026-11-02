@@ -1,8 +1,8 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { Client } from "@modelcontextprotocol/client";
 import {
   getDefaultEnvironment,
   StdioClientTransport,
-} from "@modelcontextprotocol/sdk/client/stdio.js";
+} from "@modelcontextprotocol/client/stdio";
 
 const allowedTools = new Set(["list_organizations", "list_assets"]);
 
@@ -56,7 +56,6 @@ export async function connectGateway(env = process.env) {
       }
       const result = await client.callTool(
         { name, arguments: args },
-        undefined,
         { timeout: 180000 },
       );
       if (result.isError) {
