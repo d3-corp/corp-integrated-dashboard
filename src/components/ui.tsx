@@ -27,18 +27,20 @@ export const SLA_BAR: Record<Sla, string> = {
   "Due later": "bg-dim",
 };
 
-export const RUN_TONE: Record<RunStatus, Tone> = {
+export const RUN_TONE: Record<RunStatus | "—", Tone> = {
   Running: "run",
   Success: "ok",
   Warning: "warn",
   Error: "danger",
+  "—": "neutral",
 };
 
-export const RUN_BAR: Record<RunStatus, string> = {
+export const RUN_BAR: Record<RunStatus | "—", string> = {
   Running: "bg-accent",
   Success: "bg-text",
   Warning: "bg-warn",
   Error: "bg-danger",
+  "—": "",
 };
 
 export function Pill({ tone, small, children }: { tone: Tone; small?: boolean; children: ReactNode }) {

@@ -1,7 +1,10 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { buildData, isRawLayout, sampleData, type DataSet } from "./snapshot";
 
-export type Source = { kind: "test" } | { kind: "live"; organization: string; fetchedAt: string };
+export type UnavailableSource = "updates" | "runs";
+export type Source =
+  | { kind: "test" }
+  | { kind: "live"; organization: string; fetchedAt: string; unavailable: UnavailableSource[] };
 
 export interface DataContextValue {
   data: DataSet;
@@ -72,10 +75,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         endpoints?: unknown;
         updates?: unknown;
         runs?: unknown;
+        unavailable?: unknown;
       };
       const fetchedAt = payload.fetchedAt;
       const organization = payload.organization;
       const raw = { endpoints: payload.endpoints, updates: payload.updates, runs: payload.runs };
+      const unavailable: UnavailableSource[] = Array.isArray(payload.unavailable)
+        ? payload.unavailable.filter(
+            (value): value is UnavailableSource => value === "updates" || value === "runs",
+          )
+        : [];
 
       if (typeof fetchedAt !== "string" || typeof organization !== "string" || !isRawLayout(raw)) {
         setError(SHAPE_ERROR);
@@ -83,7 +92,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       setData(buildData(raw));
-      setSource({ kind: "live", organization, fetchedAt });
+      setSource({ kind: "live", organization, fetchedAt, unavailable });
     } catch {
       setError(NETWORK_ERROR);
     } finally {

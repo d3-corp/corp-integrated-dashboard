@@ -47,7 +47,7 @@ export interface PolicyRun {
   target: string;
   started: string;
   finished: string;
-  status: RunStatus;
+  status: RunStatus | "—";
   progress: number;
 }
 
@@ -108,7 +108,7 @@ export function buildData(raw: RawData, { emptyVersion = "—" }: BuildOptions =
     target: r[1],
     started: r[2],
     finished: r[3],
-    status: r[4] as RunStatus,
+    status: r[4] as RunStatus | "—",
     progress: r[5],
   }));
 
@@ -160,16 +160,22 @@ export interface EndpointRun {
   via: "direct" | "group";
 }
 
-/** Policy runs that targeted this endpoint by name (full or short hostname) or through its group. */
+/** Policy runs that targeted this endpoint by name (full or short hostname) or through any of its groups. */
 export function runsForEndpoint(e: Endpoint, runs: PolicyRun[]): EndpointRun[] {
   const short = e.name.split(".")[0].toLowerCase();
   const names = new Set([e.name.toLowerCase(), short]);
-  const groupTarget = `${e.group} (group)`.toLowerCase();
+  const groupTargets = new Set(
+    e.group
+      .split(",")
+      .map((group) => group.trim())
+      .filter((group) => group.length > 0)
+      .map((group) => `${group} (group)`.toLowerCase()),
+  );
 
   return runs.flatMap((run): EndpointRun[] => {
     const target = run.target.toLowerCase();
     if (target.split(",").some((t) => names.has(t.trim()))) return [{ run, via: "direct" }];
-    if (target === groupTarget) return [{ run, via: "group" }];
+    if (groupTargets.has(target)) return [{ run, via: "group" }];
     return [];
   });
 }

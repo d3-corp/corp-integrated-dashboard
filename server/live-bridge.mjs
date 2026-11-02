@@ -126,11 +126,30 @@ export function createBridge({ distDir, getGateway = connectGateway, env = proce
           limit: 100,
           maxPages: 10,
         });
+
+        let instances = [];
+        let runsFailed = false;
+        try {
+          const deployments = await client.call("list_deployments", {
+            organizationId: organization.id,
+            kind: "instances",
+            limit: 100,
+            maxPages: 10,
+          });
+          instances = deployments.items;
+        } catch {
+          // Automation data is optional: keep the endpoint payload intact.
+          instances = [];
+          runsFailed = true;
+        }
+
         return json(
           200,
           toLivePayload({
             organization: organization.name || organization.id,
             assets: assets.items,
+            instances,
+            runsFailed,
             truncated: assets.truncated,
             fetchedAt: new Date().toISOString(),
           }),
