@@ -76,8 +76,15 @@ export function Explorer() {
   const [runFilter, setRunFilter] = useState("all");
   const [openId, setOpenId] = useState("");
 
-  const { data } = useData();
+  const { data, source } = useData();
   const { endpoints, updates, runs, thirdPartyApps } = data;
+  const unavailable = source.kind === "live" ? source.unavailable : [];
+  const tabUnavailable = (key: TabKey) =>
+    key === "vulns" || key === "software"
+      ? unavailable.includes("updates")
+      : key === "policies"
+        ? unavailable.includes("runs")
+        : false;
 
   const q = query.toLowerCase().trim();
   const pick = <T,>(filters: Filter<T>[], key: string) => filters.find((f) => f.key === key)!.test;
@@ -94,11 +101,11 @@ export function Explorer() {
   const runRows = runs.filter(pick(RUN_FILTERS, runFilter)).filter((r) => contains(q, r.name, r.target, r.status));
 
   const critPlusImp = updates.filter((u) => u.severity !== "None").length;
-  const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: "vulns", label: "Vulnerabilities", count: critPlusImp },
-    { key: "software", label: "Installed software", count: thirdPartyApps.length },
+  const tabs: { key: TabKey; label: string; count: number | string }[] = [
+    { key: "vulns", label: "Vulnerabilities", count: tabUnavailable("vulns") ? "—" : critPlusImp },
+    { key: "software", label: "Installed software", count: tabUnavailable("software") ? "—" : thirdPartyApps.length },
     { key: "assets", label: "Assets", count: endpoints.length },
-    { key: "policies", label: "Automations", count: runs.length },
+    { key: "policies", label: "Automations", count: tabUnavailable("policies") ? "—" : runs.length },
   ];
 
   const view = {
@@ -107,6 +114,9 @@ export function Explorer() {
     assets: { placeholder: "Search hostname, user, IP, serial", shown: `${assetRows.length} of ${endpoints.length} endpoints`, n: assetRows.length },
     policies: { placeholder: "Search policy or target", shown: `${runRows.length} of ${runs.length} runs`, n: runRows.length },
   }[tab];
+
+  const isUnavailable = tabUnavailable(tab);
+  const shown = isUnavailable ? "Not available in live mode" : view.shown;
 
   const selectTab = (k: TabKey) => {
     setTab(k);
@@ -143,7 +153,7 @@ export function Explorer() {
           />
         </label>
 
-        {tab === "vulns" && (
+        {tab === "vulns" && !isUnavailable && (
           <>
             <FilterChips filters={SEVERITY_FILTERS} all={updates} value={severity} onChange={setSeverity} />
             <div className="chips">
@@ -156,12 +166,14 @@ export function Explorer() {
           </>
         )}
         {tab === "assets" && <FilterChips filters={ASSET_FILTERS} all={endpoints} value={assetFilter} onChange={setAssetFilter} />}
-        {tab === "policies" && <FilterChips filters={RUN_FILTERS} all={runs} value={runFilter} onChange={setRunFilter} />}
+        {tab === "policies" && !isUnavailable && <FilterChips filters={RUN_FILTERS} all={runs} value={runFilter} onChange={setRunFilter} />}
 
-        <div className="toolbar__count" aria-live="polite">{view.shown}</div>
+        <div className="toolbar__count" aria-live="polite">{shown}</div>
       </div>
 
-      {view.n === 0 ? (
+      {isUnavailable ? (
+        <div className="empty">Not available in live mode: the Action1 gateway does not provide this data.</div>
+      ) : view.n === 0 ? (
         <div className="empty">Nothing matches these filters.</div>
       ) : (
         <>

@@ -4,7 +4,11 @@ import {
   StdioClientTransport,
 } from "@modelcontextprotocol/client/stdio";
 
-const allowedTools = new Set(["list_organizations", "list_assets"]);
+const allowedTools = new Set([
+  "list_organizations",
+  "list_assets",
+  "list_deployments",
+]);
 
 function readArgs(value) {
   if (value === undefined || value === "") return [];

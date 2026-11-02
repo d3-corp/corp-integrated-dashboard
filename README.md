@@ -98,8 +98,14 @@ The token lives only in the wrapper process and `op`; 1Password supplies the
 Action1 secrets only to the gateway. The browser calls only `/api/live` and never
 receives credentials, and tenant data is held only in memory.
 
-Live mode currently fills the endpoint table; missing updates and automation runs
-stay empty until the gateway exposes those records.
+In live mode the bridge fills **Assets** (the Group column comes from the
+endpoint's Action1 group membership) and **Automations** (from Action1
+automation instances; start and finish times are shown as returned by Action1,
+without timezone conversion). **Vulnerabilities** and **Installed software** show
+"Not available in live mode": the gateway exposes only per-endpoint update
+counts, and report access is not granted to the current API key. If the
+automation read fails, **Automations** shows the same notice while assets still
+load.
 
 ## Requesting work
 
