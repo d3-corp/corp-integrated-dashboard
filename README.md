@@ -44,8 +44,13 @@ The bridge launches the Action1 MCP gateway over stdio. Set:
   wrapper needs none.
 - `ACTION1_ORGANIZATION_ID` (optional): the organization to read. Set it when the
   gateway can see more than one organization.
-- `ACTION1_BASE_URL` and `ACTION1_ORGANIZATION_IDS` (optional): forwarded to the
-  gateway when set. Credentials are never forwarded by the bridge.
+- `ACTION1_BASE_URL`: the Action1 API base for the tenant's region, forwarded to
+  the gateway. Set it to `https://app.na-2.action1.com/api/3.0` for this tenant
+  (NA-2). If it is unset, the gateway falls back to `https://app.action1.com/api/3.0`,
+  which does not recognise NA-2 API credentials, so every live fetch fails with
+  `Action1 request failed (HTTP 401)`.
+- `ACTION1_ORGANIZATION_IDS` (optional): forwarded to the gateway when set.
+  Credentials are never forwarded by the bridge.
 
 ### 1Password wrapper
 
@@ -84,6 +89,7 @@ Then point the bridge at the wrapper by its absolute path:
 
 ```sh
 export ACTION1_MCP_COMMAND="$HOME/.local/bin/action1-gateway"
+export ACTION1_BASE_URL="https://app.na-2.action1.com/api/3.0"
 unset ACTION1_MCP_ARGS
 npm run live
 ```
