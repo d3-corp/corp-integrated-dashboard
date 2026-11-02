@@ -38,27 +38,59 @@ The bridge listens only on `127.0.0.1` and uses `LIVE_BRIDGE_PORT` (default
 
 The bridge launches the Action1 MCP gateway over stdio. Set:
 
-- `ACTION1_MCP_COMMAND` (required): the gateway command, for example `node` or
-  `op` for 1Password injection.
-- `ACTION1_MCP_ARGS` (optional): a JSON array of arguments for that command.
+- `ACTION1_MCP_COMMAND` (required): the command that starts the gateway. Use the
+  wrapper script below.
+- `ACTION1_MCP_ARGS` (optional): a JSON array of arguments for that command. The
+  wrapper needs none.
 - `ACTION1_ORGANIZATION_ID` (optional): the organization to read. Set it when the
   gateway can see more than one organization.
 - `ACTION1_BASE_URL` and `ACTION1_ORGANIZATION_IDS` (optional): forwarded to the
   gateway when set. Credentials are never forwarded by the bridge.
 
-A placeholder-only example that lets 1Password inject credentials into the
-gateway process:
+### 1Password wrapper
+
+The bridge starts the gateway with a minimal environment (`HOME`, `LOGNAME`,
+`PATH`, `SHELL`, `TERM`, `USER` and the two `ACTION1_*` settings above). It does
+not pass `OP_SERVICE_ACCOUNT_TOKEN` through, so a wrapper reads the 1Password
+service-account token from a file and runs the gateway under `op run`. Create it
+once per machine, replacing the placeholders:
 
 ```sh
-export ACTION1_MCP_COMMAND="op"
-export ACTION1_MCP_ARGS='["run","--environment","<environment-id>","--","node","<path-to-action1-gateway>/src/server.mjs"]'
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/action1-gateway <<'SH'
+#!/bin/sh
+set -eu
+umask 077
+token_file="$HOME/.config/op/sa-token"
+[ -r "$token_file" ] || { echo "action1-gateway: cannot read $token_file" >&2; exit 1; }
+OP_SERVICE_ACCOUNT_TOKEN="$(cat "$token_file")"
+export OP_SERVICE_ACCOUNT_TOKEN
+exec op run --environment "<environment-id>" -- \
+  node "<path-to-action1-gateway>/src/server.mjs"
+SH
+chmod 700 ~/.local/bin/action1-gateway
+chmod 600 ~/.config/op/sa-token
+```
+
+- `~/.config/op/sa-token` holds only the raw service-account token, owner-only.
+  Never `source` it from a shell profile: that runs the token as a command and
+  prints it in the error message.
+- `<environment-id>` is the 1Password Environment that holds the Action1
+  credentials; `<path-to-action1-gateway>` is the local Action1 MCP gateway
+  checkout.
+- `op` and `node` must be on the `PATH` the bridge inherits.
+
+Then point the bridge at the wrapper by its absolute path:
+
+```sh
+export ACTION1_MCP_COMMAND="$HOME/.local/bin/action1-gateway"
+unset ACTION1_MCP_ARGS
 npm run live
 ```
 
-This launches `op run --environment <environment-id> -- node
-<path-to-action1-gateway>/src/server.mjs`, so 1Password supplies secrets only to
-the gateway. The browser calls only `/api/live` and never receives credentials,
-and tenant data is held only in memory.
+The token lives only in the wrapper process and `op`; 1Password supplies the
+Action1 secrets only to the gateway. The browser calls only `/api/live` and never
+receives credentials, and tenant data is held only in memory.
 
 Live mode currently fills the endpoint table; missing updates and automation runs
 stay empty until the gateway exposes those records.
