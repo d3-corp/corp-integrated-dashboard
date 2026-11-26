@@ -98,7 +98,11 @@ export function Insights() {
             <span className="risk-row__name">{u.name}</span>
             <span className="risk-row__meta">
               <span className="risk-row__cve">{u.cves.length} CVE</span>
-              <Pill tone={SLA_TONE[u.sla]} small>{u.sla}</Pill>
+              {u.sla === null ? (
+                <Pill tone="neutral" small>—</Pill>
+              ) : (
+                <Pill tone={SLA_TONE[u.sla]} small>{u.sla}</Pill>
+              )}
             </span>
           </div>
         ))}
