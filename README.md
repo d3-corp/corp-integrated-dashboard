@@ -101,11 +101,16 @@ receives credentials, and tenant data is held only in memory.
 In live mode the bridge fills **Assets** (the Group column comes from the
 endpoint's Action1 group membership) and **Automations** (from Action1
 automation instances; start and finish times are shown as returned by Action1,
-without timezone conversion). **Vulnerabilities** and **Installed software** show
-"Not available in live mode": the gateway exposes only per-endpoint update
-counts, and report access is not granted to the current API key. If the
-automation read fails, **Automations** shows the same notice while assets still
-load.
+without timezone conversion). It also reads missing updates through the
+gateway's `list_missing_updates` tool and fills **Vulnerabilities**,
+**Installed software** (the App-type missing updates) and the missing-update
+KPIs and SLA breakdown from them. Unknown version, severity, SLA, deadline and
+release values are shown as `—` or Unrated. CVEs are not joined from Action1
+`/vulnerabilities` in this pass, so CVE columns and counts stay empty in live
+mode. If the update read fails, **Vulnerabilities** and **Installed software**
+show "Not available in live mode" while assets and automations still load. If
+the automation read fails, **Automations** shows the same notice while assets
+still load.
 
 ## Requesting work
 

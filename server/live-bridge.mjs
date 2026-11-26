@@ -127,6 +127,20 @@ export function createBridge({ distDir, getGateway = connectGateway, env = proce
           maxPages: 10,
         });
 
+        let missingUpdates = null;
+        let updatesFailed = false;
+        try {
+          missingUpdates = await client.call("list_missing_updates", {
+            organizationId: organization.id,
+            limit: 100,
+            maxPages: 10,
+          });
+        } catch {
+          // Missing updates are optional: keep endpoints and runs, mark updates unavailable.
+          missingUpdates = null;
+          updatesFailed = true;
+        }
+
         let instances = [];
         let runsFailed = false;
         try {
@@ -149,8 +163,10 @@ export function createBridge({ distDir, getGateway = connectGateway, env = proce
             organization: organization.name || organization.id,
             assets: assets.items,
             instances,
+            updates: missingUpdates?.items || [],
             runsFailed,
-            truncated: assets.truncated,
+            updatesFailed,
+            truncated: Boolean(assets.truncated || missingUpdates?.truncated),
             fetchedAt: new Date().toISOString(),
           }),
         );

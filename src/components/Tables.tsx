@@ -53,7 +53,7 @@ export function SoftwareTable({ rows }: { rows: Update[] }) {
             <span className="c-code c-2">{s.version}</span>
             <span><Pill tone={SEVERITY_TONE[s.severity]}>{severityLabel(s.severity)}</Pill></span>
             <span className="c-code c-strong">{s.cves.length}</span>
-            <span className={`c-strong ${SLA_TEXT[s.sla]}`}>{s.sla}</span>
+            <span className={`c-strong ${s.sla === null ? "fg-muted" : SLA_TEXT[s.sla]}`}>{s.sla ?? "—"}</span>
             <span className="c-code c-2">{s.deadline}</span>
           </GridRow>
         ))}
@@ -85,7 +85,7 @@ export function VulnsTable({ rows, openId, onToggle }: { rows: Update[]; openId:
               <span className="c-2">{v.type ?? "—"}</span>
               <span><Pill tone={SEVERITY_TONE[v.severity]}>{severityLabel(v.severity)}</Pill></span>
               <span className="c-code c-strong">{v.cves.length}</span>
-              <span className={`c-strong ${SLA_TEXT[v.sla]}`}>{v.sla}</span>
+              <span className={`c-strong ${v.sla === null ? "fg-muted" : SLA_TEXT[v.sla]}`}>{v.sla ?? "—"}</span>
               <span className="c-code c-2">{v.deadline}</span>
             </button>
             {isOpen && (

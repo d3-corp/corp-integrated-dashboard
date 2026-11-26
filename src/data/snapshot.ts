@@ -36,7 +36,7 @@ export interface Update {
   kb: string;
   version: string;
   severity: Severity;
-  sla: Sla;
+  sla: Sla | null;
   deadline: string;
   released: string;
   cves: string[];
@@ -69,6 +69,8 @@ export interface BuildOptions {
   emptyVersion?: string;
 }
 
+export const SLA_ORDER: Sla[] = ["Overdue", "Due soon", "Due later"];
+
 export function buildData(raw: RawData, { emptyVersion = "—" }: BuildOptions = {}): DataSet {
   const endpoints: Endpoint[] = raw.endpoints.map((a) => ({
     name: a[0],
@@ -96,8 +98,8 @@ export function buildData(raw: RawData, { emptyVersion = "—" }: BuildOptions =
     kb: p[3] || "—",
     // An empty version is unknown in live data; only the bundled sample uses "" to mean the latest version.
     version: p[4] === "" ? emptyVersion : p[4],
-    severity: p[5] as Severity,
-    sla: p[6] as Sla,
+    severity: p[5] === "Critical" ? "Critical" : p[5] === "Important" ? "Important" : "None",
+    sla: SLA_ORDER.includes(p[6] as Sla) ? (p[6] as Sla) : null,
     deadline: p[7],
     released: p[8],
     cves: p[9] ? p[9].split(" ") : [],
@@ -133,18 +135,17 @@ export const thirdPartyApps: Update[] = sampleData.thirdPartyApps;
 
 const SEV_RANK: Record<Severity, number> = { Critical: 0, Important: 1, None: 2 };
 const SLA_RANK: Record<Sla, number> = { Overdue: 0, "Due soon": 1, "Due later": 2 };
+const slaRank = (sla: Sla | null) => (sla === null ? 3 : SLA_RANK[sla]);
 
 /** Riskiest first: severity, then SLA urgency, then CVE count, then earliest deadline. */
 export function byRisk(a: Update, b: Update): number {
   return (
     SEV_RANK[a.severity] - SEV_RANK[b.severity] ||
-    SLA_RANK[a.sla] - SLA_RANK[b.sla] ||
+    slaRank(a.sla) - slaRank(b.sla) ||
     b.cves.length - a.cves.length ||
     a.deadline.localeCompare(b.deadline)
   );
 }
-
-export const SLA_ORDER: Sla[] = ["Overdue", "Due soon", "Due later"];
 
 export const severityLabel = (s: Severity) => (s === "None" ? "Unrated" : s);
 

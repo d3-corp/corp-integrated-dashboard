@@ -131,7 +131,44 @@ export function toRunRow(instance, lookup) {
   ];
 }
 
-export function toLivePayload({ organization, assets, instances, runsFailed, truncated, fetchedAt }) {
+const SEVERITIES = new Set(["Critical", "Important"]);
+const SLA_STATUSES = new Set(["Overdue", "Due soon", "Due later"]);
+
+/** A non-blank string as-is, otherwise empty (used where live data leaves the cell blank). */
+function optionalText(value) {
+  return typeof value === "string" && value.trim() ? value : "";
+}
+
+/** One Action1 missing update as a RAW_UPDATES tuple; unknown fields stay unknown. */
+export function toUpdateRow(item) {
+  const record = item && typeof item === "object" ? item : {};
+  const versions = Array.isArray(record.versions) ? record.versions : [];
+  const first = versions[0];
+  const version = first && typeof first === "object" ? first : {};
+  return [
+    text(record.name),
+    text(record.vendor),
+    record.update_type === "App" || record.update_type === "Windows" ? record.update_type : "",
+    optionalText(record.kb_number),
+    optionalText(version.version),
+    SEVERITIES.has(version.security_severity) ? version.security_severity : "None",
+    SLA_STATUSES.has(version.update_sla_status) ? version.update_sla_status : PLACEHOLDER,
+    text(version.update_sla_deadline),
+    text(version.release_date),
+    "",
+  ];
+}
+
+export function toLivePayload({
+  organization,
+  assets,
+  instances,
+  updates = [],
+  runsFailed,
+  updatesFailed,
+  truncated,
+  fetchedAt,
+}) {
   const list = Array.isArray(assets) ? assets : [];
   const lookup = buildLookup(list);
   const runs = (instances || [])
@@ -150,9 +187,12 @@ export function toLivePayload({ organization, assets, instances, runsFailed, tru
     fetchedAt,
     organization,
     endpoints: list.map(toEndpointRow),
-    updates: [],
+    updates: (updates || []).map(toUpdateRow),
     runs,
-    unavailable: runsFailed ? ["updates", "runs"] : ["updates"],
+    unavailable: [
+      ...(updatesFailed ? ["updates"] : []),
+      ...(runsFailed ? ["runs"] : []),
+    ],
     truncated: Boolean(truncated),
   };
 }

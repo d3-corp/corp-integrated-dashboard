@@ -8,6 +8,7 @@ const allowedTools = new Set([
   "list_organizations",
   "list_assets",
   "list_deployments",
+  "list_missing_updates",
 ]);
 
 function readArgs(value) {
